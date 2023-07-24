@@ -1,0 +1,22 @@
+
+<html>
+<head>
+    <title>Upload Files</title>
+</head>
+<body>
+    <form action = "/upload" method="POST" enctype="multipart/form-data">
+        <input type="file" name="file" multiple />
+        <input type = "submit" value="Upload">
+    </form>
+
+    <ul>
+        {% for file in files %}
+        <li>
+            <a href="{{ (request.path + '/' if request.path != '/' else '') + file }}">
+                {{ file }}
+            </a>
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>

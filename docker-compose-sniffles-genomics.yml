@@ -1,0 +1,17 @@
+# docker-compose.yml
+version: "3"
+services:
+  sniffles-genomics:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: dav-sniffles-genomics:0.0.1
+    ports:
+      - "8050:8050"
+    environment:
+      SERVER_PORT: 8050
+      DEBUG_MODE: "True"
+    volumes:
+      - /Users/sclark/ws/sniffles/poplar_genomes:/input
+      - /Users/sclark/ws/sniffles/alignments_docker:/output
+      - /Users/sclark/ws/sniffles/data:/data

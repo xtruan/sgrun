@@ -1,0 +1,13 @@
+name: sniffles-genomics
+channels:
+  - bioconda
+  - defaults
+dependencies:
+  - python=3.9.17
+  - pip=23.1.2
+  - minimap2=2.22
+  - samtools=1.4.1
+  - pip:
+    - pysam==0.21.0
+    - sniffles==2.0.7
+    - flask==2.3.2
