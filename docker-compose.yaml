@@ -1,0 +1,19 @@
+# docker-compose.yml
+version: "3"
+services:
+  sniffles-genomics:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: harbor.nrel.gov/dav-data-library/dav-sniffles-genomics:0.0.1
+    ports:
+      - "8050:8050"
+    environment:
+      SERVER_PORT: 8050
+      DEBUG_MODE: "True"
+      PROCESS_INTERACTIVE_MODE: "False"
+      PROCESS_ONLY_NEW_FILES: "False"
+    volumes:
+      # - /opt/ws/sniffles/poplar_genomes:/input
+      # - /opt/ws/sniffles/alignments_docker:/output
+      - /opt/ws/sniffles/data:/data

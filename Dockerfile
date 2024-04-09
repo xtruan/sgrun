@@ -18,6 +18,7 @@ RUN ln -s /opt/conda/envs/sniffles-genomics/lib/libcrypto.so.1.1 /opt/conda/envs
 # ENV CONDA_ENV="conda run -n sniffles-genomics"
 ENV PATH="/opt/conda/envs/sniffles-genomics/bin:$PATH"
 RUN which python && python --version
+ENV PYTHONUNBUFFERED=1
 
 # copy the rest of the files
 COPY . .
@@ -25,6 +26,7 @@ COPY . .
 # set environment variables
 ENV SERVER_PORT=8050
 ENV DEBUG_MODE=True
+ENV INTERACTIVE_MODE=True
 
 # expose the server port
 EXPOSE ${SERVER_PORT}
@@ -33,7 +35,5 @@ EXPOSE ${SERVER_PORT}
 ### everything below this runs when the container is started
 
 # run the app
-# CMD [ "docker-entrypoint.sh" ]
 CMD [ "python", "/app/app.py" ]
-# CMD which python && python --version && python /app/app.py
-# CMD ls /opt/conda/envs/sniffles-genomics/lib
+# CMD [ "python", "/app/watch.py" ]

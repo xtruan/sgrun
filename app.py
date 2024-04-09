@@ -1,4 +1,5 @@
 import os
+import glob
 import time
 import datetime
 from flask import Flask, request, abort, send_file, render_template
@@ -7,6 +8,8 @@ app = Flask(__name__)
 
 CONDA_ENV = os.getenv('CONDA_ENV', '')
 BASE_DIR = '/data/uploads'
+INTERACTIVE = os.getenv('PROCESS_INTERACTIVE_MODE', 'True').lower() == 'true'
+ONLY_NEW_FILES = os.getenv('PROCESS_ONLY_NEW_FILES', 'False').lower() == 'true'
 
 gQueue = []
 
@@ -65,8 +68,12 @@ def process():
         # Run sniffles
         os.system(f"sniffles -i {file_dir}/{output_name}.bam -v {file_dir}/{output_name}.vcf")
 
-    return "Processed successfully!"
+        return "Processed successfully!"
+    
+    return "No files to process!"
 
+    # 1) detect files added and run pre-processing sam/bam
+    # 2) spins up in response to web call for analysis vcf
 
 @app.route('/', defaults={'req_path': ''})
 @app.route('/<path:req_path>')
@@ -87,9 +94,67 @@ def dir_listing(req_path):
     files = os.listdir(abs_path)
     return render_template('files.html', files=files)
 
+def enqueue_fasta_files(folder):
+    # Find all .fasta files in the given folder
+    fasta_files = glob.glob(os.path.join(folder, '*.fasta'))
+    
+    # Print the name of each .fasta file
+    for file in fasta_files:
+        print("Adding " + os.path.basename(file))
+    
+    # Add the fasta files to the queue
+    if len(fasta_files) > 0:
+        global gQueue
+        gQueue.append(fasta_files)
+
+def watch_directories(root_folder):
+    # Initialize a set to keep track of directories already processed
+    processed_directories = set()
+
+    do_process = True
+    if ONLY_NEW_FILES:
+        # Skip processing on the first run if we only want to process new files
+        do_process = False
+
+    
+    while True:
+        # Walk through the root folder
+        for dirpath, dirnames, _ in os.walk(root_folder):
+            for dirname in dirnames:
+                # Check if the directory has not been processed yet
+                if dirpath + dirname not in processed_directories:
+                    # Add the directory to the set of processed directories
+                    processed_directories.add(dirpath + dirname)
+                    
+                    # Print the fasta files in this directory
+                    print(f"Fasta files in directory '{dirname}':")
+                    enqueue_fasta_files(os.path.join(dirpath, dirname))
+                    
+        global gQueue
+        # Process the enqueued files
+        if do_process:
+            print("Processing enqueued files...")
+            print(str(gQueue))
+            print(process())
+        else:
+            # Clear the queue if we are not processing files
+            gQueue = []
+            # Set the flag to process files on the next iteration
+            do_process = True
+
+        # Sleep for some time before checking again
+        # You can adjust this time according to your needs
+        time.sleep(5)
+
 if __name__ == "__main__":
+
     os.makedirs(BASE_DIR, exist_ok=True)
 
-    envPort = int(os.getenv('SERVER_PORT', '8050'))
-    envDebug = os.getenv('DEBUG_MODE', 'True').lower() == 'true'
-    app.run(debug=envDebug, host='0.0.0.0', port=envPort)
+    if INTERACTIVE:
+        print("Running in interactive mode...")
+        envPort = int(os.getenv('SERVER_PORT', '8050'))
+        envDebug = os.getenv('DEBUG_MODE', 'True').lower() == 'true'
+        app.run(debug=envDebug, host='0.0.0.0', port=envPort)
+
+    else:
+        watch_directories(BASE_DIR)
