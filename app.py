@@ -100,7 +100,6 @@ def process():
         output_name = output_name + '_' + os.path.basename(files[0])
         # Run minimap2
         os.system(f"minimap2 -ax asm5 {files_str} > {file_dir}/{output_name}.sam")
-        #file_dir = os.path.join(OUTPUT_DIR, "2023_07_21_22_49_02_746364")
         # Run samtools
         os.system(f"samtools sort {file_dir}/{output_name}.sam > {file_dir}/{output_name}.bam")
         os.system(f"samtools index {file_dir}/{output_name}.bam")
