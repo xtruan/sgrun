@@ -177,7 +177,7 @@ def watch_directories(input_folder, working_folder, output_folder):
                 if (not ONLY_NEW_FILES) or (not os.path.exists(processed_file)):
                     # Add the directory to the set of processed directories using indicator file
                     with open(processed_file, 'w') as f:
-                        f.write('init\n')
+                        f.write('start\n')
                     
                     # Clean working directory
                     shutil.rmtree(working_folder)
@@ -191,12 +191,12 @@ def watch_directories(input_folder, working_folder, output_folder):
                     # Print the fasta files in this directory
                     if destination_folder is not None:
                         with open(processed_file, 'a') as f:
-                            f.write('copy inputs\n')
+                            f.write('copied inputs\n')
 
                         print(f"Fasta files in directory '{destination_folder}':")
                         enqueue_fasta_files(destination_folder)
                         with open(processed_file, 'a') as f:
-                            f.write('enqueue\n')
+                            f.write('enqueued\n')
                         
                     global gQueue
                     # Process the enqueued files in the current directory
@@ -217,7 +217,7 @@ def watch_directories(input_folder, working_folder, output_folder):
                                 output_folder)
                             if destination_folder is not None:
                                 with open(processed_file, 'a') as f:
-                                    f.write('copy outputs\n')
+                                    f.write('copied outputs\n')
                         # Break out of the loops so we explicity check for new files after processing
                         break_all = True
                     else:
@@ -225,6 +225,9 @@ def watch_directories(input_folder, working_folder, output_folder):
                         gQueue = []
                         # Set the flag to process files on the next iteration
                         do_process = True
+
+                    with open(processed_file, 'a') as f:
+                        f.write('done\n')
 
                 else:
                     print(f"Processed file found: '{processed_file}'")
