@@ -14,8 +14,8 @@ CONDA_ENV = os.getenv('CONDA_ENV', '')
 # WORK_DIR is an internal volume of the container
 BASE_DIR = '/data'
 INPUT_DIR = BASE_DIR + '/input'
-INDICATOR_FILE_NAME = '.sgcomplete'
-WORK_DIR = BASE_DIR + '/workdir/tmp'
+INDICATOR_FILE_NAME = '.sgrun'
+WORK_DIR = BASE_DIR + '/workdir/sgtmp'
 OUTPUT_DIR = BASE_DIR + '/output'
 OUTPUT_FILE_BASENAME = 'alignment'
 
@@ -176,7 +176,8 @@ def watch_directories(input_folder, working_folder, output_folder):
                 print(f"new check: {(not ONLY_NEW_FILES)} or {(not os.path.exists(processed_file))}")
                 if (not ONLY_NEW_FILES) or (not os.path.exists(processed_file)):
                     # Add the directory to the set of processed directories using indicator file
-                    open(processed_file, 'w').close()
+                    with open(processed_file, 'w') as f:
+                        f.write('init\n')
                     
                     # Clean working directory
                     shutil.rmtree(working_folder)
@@ -189,8 +190,13 @@ def watch_directories(input_folder, working_folder, output_folder):
 
                     # Print the fasta files in this directory
                     if destination_folder is not None:
+                        with open(processed_file, 'a') as f:
+                            f.write('copy inputs\n')
+
                         print(f"Fasta files in directory '{destination_folder}':")
                         enqueue_fasta_files(destination_folder)
+                        with open(processed_file, 'a') as f:
+                            f.write('enqueue\n')
                         
                     global gQueue
                     # Process the enqueued files in the current directory
@@ -198,15 +204,20 @@ def watch_directories(input_folder, working_folder, output_folder):
                         print("Processing enqueued files...")
                         print(str(gQueue))
                         out = json.loads(process())
+                        with open(processed_file, 'a') as f:
+                            f.write('processed\n')
                         if 'msg' in out:
                             print(out['msg'])
                         if 'dir' in out:
                             print(out['dir'])
-                            copy_files(
+                            destination_folder = copy_files(
                                 OUTPUT_FILE_BASENAME + '*', 
                                 working_folder, 
                                 out['dir'], 
                                 output_folder)
+                            if destination_folder is not None:
+                                with open(processed_file, 'a') as f:
+                                    f.write('copy outputs\n')
                         # Break out of the loops so we explicity check for new files after processing
                         break_all = True
                     else:
@@ -229,7 +240,7 @@ def watch_directories(input_folder, working_folder, output_folder):
         # Sleep for some time before checking again
         # You can adjust this time according to your needs
         print(f"Sleeping...")
-        time.sleep(20)
+        time.sleep(5)
 
 if __name__ == "__main__":
 
