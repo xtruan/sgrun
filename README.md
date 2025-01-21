@@ -1,4 +1,4 @@
-# Sniffles Genomics - Genomic Workflow Automation Tool
+# SGRun - Genomic Workflow Automation Tool
 
 This application automates the process of aligning genomic sequences, sorting and indexing alignments, and detecting structural variations. The tool integrates **minimap2**, **samtools**, and **sniffles** into a streamlined workflow, all encapsulated in a Docker container for ease of use.
 
@@ -32,4 +32,4 @@ When running the container, the following directories must be mounted:
      -v /path/to/input:/data/input \
      -v /path/to/output:/data/output \
      -v /path/to/workdir:/data/workdir \
-     nrel-davis-worker-snifgeno:latest
+     ghcr.io/xtruan/sniffles-genomics:main

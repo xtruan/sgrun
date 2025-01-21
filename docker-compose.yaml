@@ -5,7 +5,7 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-    image: nrel-davis-worker-snifgeno:latest
+    image: ghcr.io/xtruan/sniffles-genomics:main
     ports:
       - "8050:8050"
     environment:
