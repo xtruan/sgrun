@@ -164,9 +164,6 @@ def enqueue_fasta_files(fasta_folder):
         gQueue.append(fasta_files)
 
 def watch_directories(input_folder, working_folder, output_folder):
-    # Initialize a set to keep track of directories already processed
-    # processed_directories = set()
-
     do_process = True
     
     while True:
