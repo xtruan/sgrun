@@ -203,6 +203,7 @@ def watch_directories(input_folder, working_folder, output_folder):
                     if do_process:
                         print("Processing enqueued files...")
                         print(str(gQueue))
+                        empty_queue = (not gQueue)
                         out = json.loads(process())
                         with open(processed_file, 'a') as f:
                             f.write('processed\n')
@@ -219,7 +220,9 @@ def watch_directories(input_folder, working_folder, output_folder):
                                 with open(processed_file, 'a') as f:
                                     f.write('copied outputs\n')
                         # Break out of the loops so we explicity check for new files after processing
-                        break_all = True
+                        # Only do this if the queue was not empty
+                        if not empty_queue:
+                            break_all = True
                     else:
                         # Clear the queue if we are not processing files
                         gQueue = []
@@ -243,7 +246,7 @@ def watch_directories(input_folder, working_folder, output_folder):
         # Sleep for some time before checking again
         # You can adjust this time according to your needs
         print(f"Sleeping...")
-        time.sleep(5)
+        time.sleep(20)
 
 if __name__ == "__main__":
 
