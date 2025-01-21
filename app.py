@@ -182,8 +182,8 @@ def watch_directories(input_folder, working_folder, output_folder):
                     open(processed_file, 'w').close()
                     
                     # Clean working directory
-                    shutil.rmtree(WORK_DIR)
-                    os.makedirs(WORK_DIR, exist_ok=True)
+                    shutil.rmtree(working_folder)
+                    os.makedirs(working_folder, exist_ok=True)
                     # Copy fasta files to working directory
                     destination_folder = copy_fasta_files(
                         input_folder, 
@@ -207,9 +207,9 @@ def watch_directories(input_folder, working_folder, output_folder):
                             print(out['dir'])
                             copy_files(
                                 OUTPUT_FILE_BASENAME + '*', 
-                                WORK_DIR, 
+                                working_folder, 
                                 out['dir'], 
-                                OUTPUT_DIR)
+                                output_folder)
                         # Break out of the loops so we explicity check for new files after processing
                         break_all = True
                     else:
