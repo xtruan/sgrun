@@ -42,7 +42,7 @@ def datetime_now_label():
 def dir_listing(req_path):
 
     # Joining the base and the requested path
-    abs_path = os.path.join(OUTPUT_DIR, req_path)
+    abs_path = os.path.join(WORK_DIR, req_path)
 
     # Return 404 if path doesn't exist
     if not os.path.exists(abs_path):
@@ -63,7 +63,7 @@ def upload_file():
     # Get the file object
     files = request.files.getlist("file")
 
-    dir = os.path.join(OUTPUT_DIR, datetime_now_label())
+    dir = os.path.join(WORK_DIR, datetime_now_label())
     os.makedirs(dir, exist_ok=True)
 
     uploaded_files = []

@@ -1,7 +1,7 @@
 
 <html>
 <head>
-    <title>Upload Files</title>
+    <title>SGRun</title>
 </head>
 <body>
     <form action = "/upload" method="POST" enctype="multipart/form-data">
@@ -18,5 +18,10 @@
         </li>
         {% endfor %}
     </ul>
+
+    <form action="/process">
+        <input type="submit" value="Process uploaded files (only from this session)" />
+    </form>
+    <!-- <a href="/process">Process uploaded files (only from this session)</a> -->
 </body>
 </html>
