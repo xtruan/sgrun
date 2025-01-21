@@ -173,7 +173,7 @@ def watch_directories(input_folder, working_folder, output_folder):
             for dirname in dirnames:
                 # Check if the directory has not been processed yet
                 processed_file = os.path.join(dirpath, dirname, INDICATOR_FILE_NAME)
-                print(f"new check: {(not ONLY_NEW_FILES)} or {(not os.path.exists(processed_file))}")
+                #print(f"new check: {(not ONLY_NEW_FILES)} or {(not os.path.exists(processed_file))}")
                 if (not ONLY_NEW_FILES) or (not os.path.exists(processed_file)):
                     # Add the directory to the set of processed directories using indicator file
                     with open(processed_file, 'w') as f:
@@ -221,7 +221,9 @@ def watch_directories(input_folder, working_folder, output_folder):
                                     f.write('copied outputs\n')
                         # Break out of the loops so we explicity check for new files after processing
                         # Only do this if the queue was not empty
+                        print("Processing complete!")
                         if not empty_queue:
+                            print("Restart loop - process complete")
                             break_all = True
                     else:
                         # Clear the queue if we are not processing files
