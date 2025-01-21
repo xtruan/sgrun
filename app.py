@@ -9,11 +9,18 @@ from flask import Flask, request, abort, send_file, render_template
 app = Flask(__name__)
 
 CONDA_ENV = os.getenv('CONDA_ENV', '')
+
+# INPUT_DIR and OUTPUT_DIR should be external storage mounted to container
+# WORK_DIR is an internal volume of the container
 BASE_DIR = '/data'
 INPUT_DIR = BASE_DIR + '/input'
+INDICATOR_FILE_NAME = '.sgcomplete'
+WORK_DIR = BASE_DIR + '/workdir/tmp'
 OUTPUT_DIR = BASE_DIR + '/output'
+OUTPUT_FILE_BASENAME = 'alignment'
+
 INTERACTIVE = os.getenv('PROCESS_INTERACTIVE_MODE', 'True').lower() == 'true'
-# ONLY_NEW_FILES = os.getenv('PROCESS_ONLY_NEW_FILES', 'False').lower() == 'true'
+ONLY_NEW_FILES = os.getenv('PROCESS_ONLY_NEW_FILES', 'True').lower() == 'true'
 
 gQueue = []
 
@@ -29,6 +36,27 @@ def datetime_now():
 def datetime_now_label():
     return str(datetime_now()).split('+')[0].replace(' ', '_').replace('-', '_').replace(':', '_').replace('.', '_').replace('+', '_')
 
+# only used in INTERACTIVE mode
+@app.route('/', defaults={'req_path': ''})
+@app.route('/<path:req_path>')
+def dir_listing(req_path):
+
+    # Joining the base and the requested path
+    abs_path = os.path.join(OUTPUT_DIR, req_path)
+
+    # Return 404 if path doesn't exist
+    if not os.path.exists(abs_path):
+        return abort(404)
+
+    # Check if path is a file and serve
+    if os.path.isfile(abs_path):
+        return send_file(abs_path)
+
+    # Show directory contents
+    files = os.listdir(abs_path)
+    return render_template('files.html', files=files)
+
+# only used in INTERACTIVE mode
 @app.route("/upload", methods=["POST"])
 def upload_file():
     ret = {}
@@ -54,10 +82,11 @@ def upload_file():
     ret["queue"] = str(gQueue)
     return json.dumps(ret)
 
+# used in both INTERACTIVE and headless mode
 @app.route("/process")
 def process():
     ret = {}
-    output_name = "alignment"
+    output_name = OUTPUT_FILE_BASENAME
     
     global gQueue
     if len(gQueue) == 0:
@@ -68,6 +97,7 @@ def process():
     if len(files) > 0:
         file_dir = os.path.dirname(files[0])
         files_str = " ".join(files)
+        output_name = output_name + '_' + os.path.basename(files[0])
         # Run minimap2
         os.system(f"minimap2 -ax asm5 {files_str} > {file_dir}/{output_name}.sam")
         #file_dir = os.path.join(OUTPUT_DIR, "2023_07_21_22_49_02_746364")
@@ -87,32 +117,17 @@ def process():
     # 1) detect files added and run pre-processing sam/bam
     # 2) spins up in response to web call for analysis vcf
 
-@app.route('/', defaults={'req_path': ''})
-@app.route('/<path:req_path>')
-def dir_listing(req_path):
-
-    # Joining the base and the requested path
-    abs_path = os.path.join(OUTPUT_DIR, req_path)
-
-    # Return 404 if path doesn't exist
-    if not os.path.exists(abs_path):
-        return abort(404)
-
-    # Check if path is a file and serve
-    if os.path.isfile(abs_path):
-        return send_file(abs_path)
-
-    # Show directory contents
-    files = os.listdir(abs_path)
-    return render_template('files.html', files=files)
-
-def move_fasta_files(input_folder, fasta_folder, output_folder):
+def copy_fasta_files(input_folder, fasta_folder, output_folder, move=False):
     # Find all .fasta files in the given folder
-    fasta_files = glob.glob(os.path.join(fasta_folder, '*.fasta'))
+    return copy_files('*.fasta', input_folder, fasta_folder, output_folder, move)
+
+def copy_files(glob_pattern, input_folder, search_folder, output_folder, move=False):
+    # Find all matching files in the given folder
+    files = glob.glob(os.path.join(search_folder, glob_pattern))
     
-    # Move each .fasta file to the output folder while maintaining the directory structure
+    # Move/Copy each matching file to the output folder while maintaining the directory structure
     destination_dir = None
-    for file in fasta_files:
+    for file in files:
         # Extract the relative path from the root input folder to the file
         relative_path = os.path.relpath(file, input_folder)
         
@@ -123,8 +138,14 @@ def move_fasta_files(input_folder, fasta_folder, output_folder):
         # Ensure the directory structure exists in the output folder
         os.makedirs(os.path.dirname(destination_path), exist_ok=True)
         
-        # Move the file to the output folder
-        shutil.move(file, destination_path)
+        if move:
+            # Move the file to the output folder
+            print(f"Moving file {file} to {destination_path}...")
+            shutil.move(file, destination_path)
+        else:
+            # Copy the file to the output folder
+            print(f"Copying file {file} to {destination_path}...")
+            shutil.copy(file, destination_path)
 
         destination_dir = os.path.dirname(destination_path)
 
@@ -143,56 +164,81 @@ def enqueue_fasta_files(fasta_folder):
         global gQueue
         gQueue.append(fasta_files)
 
-def watch_directories(input_folder, output_folder):
+def watch_directories(input_folder, working_folder, output_folder):
     # Initialize a set to keep track of directories already processed
     # processed_directories = set()
 
     do_process = True
-    # if ONLY_NEW_FILES:
-    #     # Skip processing on the first run if we only want to process new files
-    #     do_process = False
-
     
     while True:
         # Walk through the root folder
+        break_all = False
         for dirpath, dirnames, _ in os.walk(input_folder):
             for dirname in dirnames:
                 # Check if the directory has not been processed yet
-                # if dirpath + dirname not in processed_directories:
-                    # Add the directory to the set of processed directories
-                    # processed_directories.add(dirpath + dirname)
+                processed_file = os.path.join(dirpath, dirname, INDICATOR_FILE_NAME)
+                print(f"new check: {(not ONLY_NEW_FILES)} or {(not os.path.exists(processed_file))}")
+                if (not ONLY_NEW_FILES) or (not os.path.exists(processed_file)):
+                    # Add the directory to the set of processed directories using indicator file
+                    open(processed_file, 'w').close()
                     
-                destination_folder = move_fasta_files(
-                    input_folder, os.path.join(dirpath, dirname), output_folder)
+                    # Clean working directory
+                    shutil.rmtree(WORK_DIR)
+                    os.makedirs(WORK_DIR, exist_ok=True)
+                    # Copy fasta files to working directory
+                    destination_folder = copy_fasta_files(
+                        input_folder, 
+                        os.path.join(dirpath, dirname), 
+                        working_folder)
 
-                # Print the fasta files in this directory
-                if destination_folder is not None:
-                    print(f"Fasta files in directory '{destination_folder}':")
-                    enqueue_fasta_files(destination_folder)
-                    
-        global gQueue
-        # Process the enqueued files
-        if do_process:
-            print("Processing enqueued files...")
-            print(str(gQueue))
-            out = json.loads(process())
-            if 'msg' in out:
-                print(out['msg'])
-            if 'dir' in out:
-                print(out['dir'])
-        else:
-            # Clear the queue if we are not processing files
-            gQueue = []
-            # Set the flag to process files on the next iteration
-            do_process = True
+                    # Print the fasta files in this directory
+                    if destination_folder is not None:
+                        print(f"Fasta files in directory '{destination_folder}':")
+                        enqueue_fasta_files(destination_folder)
+                        
+                    global gQueue
+                    # Process the enqueued files in the current directory
+                    if do_process:
+                        print("Processing enqueued files...")
+                        print(str(gQueue))
+                        out = json.loads(process())
+                        if 'msg' in out:
+                            print(out['msg'])
+                        if 'dir' in out:
+                            print(out['dir'])
+                            copy_files(
+                                OUTPUT_FILE_BASENAME + '*', 
+                                WORK_DIR, 
+                                out['dir'], 
+                                OUTPUT_DIR)
+                        # Break out of the loops so we explicity check for new files after processing
+                        break_all = True
+                    else:
+                        # Clear the queue if we are not processing files
+                        gQueue = []
+                        # Set the flag to process files on the next iteration
+                        do_process = True
+
+                else:
+                    print(f"Processed file found: '{processed_file}'")
+
+                if break_all:
+                    # Break inner for
+                    break
+            if break_all:
+                break_all = False
+                # Break outer for
+                break
 
         # Sleep for some time before checking again
         # You can adjust this time according to your needs
+        print(f"Sleeping...")
         time.sleep(20)
 
 if __name__ == "__main__":
 
     os.makedirs(INPUT_DIR, exist_ok=True)
+    os.makedirs(WORK_DIR, exist_ok=True)
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     if INTERACTIVE:
@@ -202,4 +248,4 @@ if __name__ == "__main__":
         app.run(debug=envDebug, host='0.0.0.0', port=envPort)
 
     else:
-        watch_directories(INPUT_DIR, OUTPUT_DIR)
+        watch_directories(INPUT_DIR, WORK_DIR, OUTPUT_DIR)
