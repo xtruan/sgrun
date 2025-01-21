@@ -235,7 +235,7 @@ def watch_directories(input_folder, working_folder, output_folder):
                         f.write('done\n')
 
                 else:
-                    print(f"Processed file found: '{processed_file}'")
+                    print(f"{INDICATOR_FILE_NAME} file found: '{processed_file}'")
 
                 if break_all:
                     # Break inner for
