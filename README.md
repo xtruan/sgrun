@@ -32,4 +32,4 @@ When running the container, the following directories must be mounted:
      -v /path/to/input:/data/input \
      -v /path/to/output:/data/output \
      -v /path/to/workdir:/data/workdir \
-     ghcr.io/xtruan/sniffles-genomics:main
+     ghcr.io/xtruan/sgrun:main
