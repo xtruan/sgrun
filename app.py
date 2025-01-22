@@ -99,6 +99,9 @@ def process():
         files_str = " ".join(files)
         output_name = output_name + '_' + os.path.basename(files[0])
         # Run minimap2
+        # The flag -ax asm5 specifies a preset alignment mode optimized for aligning assembly sequences with highly accurate long reads
+        #   -x asm5: Configures alignment for genome assemblies with ~5% divergence
+        #   -a: Outputs results in SAM format
         os.system(f"minimap2 -ax asm5 {files_str} > {file_dir}/{output_name}.sam")
         # Run samtools
         os.system(f"samtools sort {file_dir}/{output_name}.sam > {file_dir}/{output_name}.bam")
