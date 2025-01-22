@@ -25,7 +25,7 @@ When running the container, the following directories must be mounted:
 
 ### Run the Workflow
 
-1. Place your input genomic sequence files in a folder in the `/data/input` directory. Note that the reference sequence file *MUST* be the first file alphabetically otherwise behavior is be undefined.
+1. Place your input genomic sequence files in a folder in the `/data/input` directory. Note that the reference sequence file *MUST* be the first file alphabetically in it's respective folder otherwise behavior is undefined.
 2. Run the Docker container with the required mounts:
    ```bash
    docker run --rm \
