@@ -34,7 +34,7 @@ def datetime_now():
     return posix_sec_to_datetime(posix_sec_now())
 
 def datetime_now_label():
-    return str(datetime_now()).split('+')[0]
+    return str(datetime_now()).split('+')[0] \
         .replace(' ', '_').replace('-', '_').replace(':', '_').replace('.', '_').replace('+', '_')
 
 # only used in INTERACTIVE mode
