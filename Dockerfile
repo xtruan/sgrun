@@ -17,11 +17,12 @@ RUN ln -s /opt/conda/envs/sniffles-genomics/lib/libcrypto.so.1.1 /opt/conda/envs
 # SHELL ["conda", "run", "-n", "sniffles-genomics", "/bin/bash", "-c"]
 # ENV CONDA_ENV="conda run -n sniffles-genomics"
 ENV PATH="/opt/conda/envs/sniffles-genomics/bin:$PATH"
-RUN which python && python --version
+# RUN which python && python --version
 ENV PYTHONUNBUFFERED=1
 
 # copy the rest of the files
-COPY . .
+COPY README.md ./
+COPY app.py ./
 
 # set environment variables
 ENV SERVER_PORT=8050

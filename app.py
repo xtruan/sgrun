@@ -74,6 +74,8 @@ def upload_file():
         with open(uploaded_file, "wb") as f:
             f.write(file.read())
             uploaded_files.append(uploaded_file)
+            
+    uploaded_files = sorted(uploaded_files)
 
     global gQueue
     gQueue.append(uploaded_files)
@@ -127,7 +129,7 @@ def copy_fasta_files(input_folder, fasta_folder, output_folder, move=False):
 
 def copy_files(glob_pattern, input_folder, search_folder, output_folder, move=False):
     # Find all matching files in the given folder
-    files = glob.glob(os.path.join(search_folder, glob_pattern))
+    files = sorted(glob.glob(os.path.join(search_folder, glob_pattern)))
     
     # Move/Copy each matching file to the output folder while maintaining the directory structure
     destination_dir = None
@@ -157,7 +159,7 @@ def copy_files(glob_pattern, input_folder, search_folder, output_folder, move=Fa
 
 def enqueue_fasta_files(fasta_folder):
     # Find all .fasta files in the given folder
-    fasta_files = glob.glob(os.path.join(fasta_folder, '*.fasta'))
+    fasta_files = sorted(glob.glob(os.path.join(fasta_folder, '*.fasta')))
     
     # Print the name of each .fasta file
     for file in fasta_files:
